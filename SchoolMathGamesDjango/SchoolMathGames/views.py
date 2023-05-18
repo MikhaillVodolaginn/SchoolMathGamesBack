@@ -8,7 +8,7 @@ from .models import GamesMock, LoginMock
 class GameList(APIView):
     @staticmethod
     def get(request):
-        return Response({'gameList': GamesMock.gameList})
+        return Response(GamesMock.gameList)
 
 
 class Login(APIView):
