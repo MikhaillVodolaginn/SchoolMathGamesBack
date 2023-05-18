@@ -21,5 +21,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/games/", GameList.as_view()),
     path("api/v1/login/", Login.as_view()),
-    path("api/v1/accessToken/", AccessToken.as_view()),
+    path("api/v1/isValidToken/", AccessToken.as_view()),
 ]

@@ -26,6 +26,6 @@ class AccessToken(APIView):
     @staticmethod
     def get(request):
         if request.GET.get('accessToken', '') == LoginMock.accessToken:
-            return Response({'validToken': 'true'})
+            return Response({'validToken': True})
         else:
-            return Response({'error': 'Доступ запрещен'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'validToken': False})
