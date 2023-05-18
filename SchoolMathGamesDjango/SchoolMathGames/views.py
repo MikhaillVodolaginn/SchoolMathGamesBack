@@ -19,7 +19,7 @@ class Login(APIView):
         if login == LoginMock.login and password == LoginMock.password:
             return Response({'accessToken': LoginMock.accessToken})
         else:
-            return Response({'error': 'Доступ запрещен'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'Неверный логин или пароль'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class AccessToken(APIView):
@@ -28,4 +28,4 @@ class AccessToken(APIView):
         if request.GET.get('accessToken', '') == LoginMock.accessToken:
             return Response({'validToken': 'true'})
         else:
-            return Response({'validToken': 'false'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'Доступ запрещен'}, status=status.HTTP_401_UNAUTHORIZED)
