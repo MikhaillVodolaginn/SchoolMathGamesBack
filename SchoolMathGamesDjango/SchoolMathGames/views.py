@@ -16,3 +16,11 @@ class SecretGameList(APIView):
     @staticmethod
     def get(request):
         return Response(GamesMock.gameList)
+
+
+class CheckToken(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @staticmethod
+    def get(request):
+        return Response({'validToken': 'true'})

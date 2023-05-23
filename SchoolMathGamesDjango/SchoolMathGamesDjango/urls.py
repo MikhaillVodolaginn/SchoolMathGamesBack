@@ -15,12 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-from SchoolMathGames.views import GameList, SecretGameList
+from SchoolMathGames.views import GameList, SecretGameList, CheckToken
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/games/", GameList.as_view()),
     path("api/v1/secretGames/", SecretGameList.as_view()),
+    path("api/v1/isValidToken/", CheckToken.as_view()),
     path("api/v1/auth/", include('djoser.urls')),
     re_path(r"^auth/", include('djoser.urls.authtoken'))
 ]
