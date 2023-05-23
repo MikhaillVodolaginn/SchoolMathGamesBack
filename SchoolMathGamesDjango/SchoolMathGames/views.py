@@ -24,3 +24,15 @@ class CheckToken(APIView):
     @staticmethod
     def get(request):
         return Response({'validToken': 'true'})
+
+
+class CreateGame(APIView):
+    @staticmethod
+    def post(request):
+        return Response(GamesMock.game)
+
+
+class GetGameById(APIView):
+    @staticmethod
+    def get(request):
+        return Response(GamesMock.game)
