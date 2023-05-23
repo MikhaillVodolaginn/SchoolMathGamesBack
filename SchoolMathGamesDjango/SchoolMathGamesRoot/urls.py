@@ -1,4 +1,4 @@
-"""SchoolMathGamesDjango URL Configuration
+"""SchoolMathGamesRoot URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.1/topics/http/urls/
@@ -15,15 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-from SchoolMathGames.views import GameList, SecretGameList, CheckToken, GetGameById, CreateGame
+from SchoolMathGamesApp.views import *
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/v1/games/", GameList.as_view()),
-    path("api/v1/secretGames/", SecretGameList.as_view()),
+    path("api/v1/gameList/", GameList.as_view()),
+    path("api/v1/createGame/", CreateGame.as_view()),
     path("api/v1/isValidToken/", CheckToken.as_view()),
-    path("api/v1/game", GetGameById.as_view()),
-    path("api/v1/create-game", CreateGame.as_view()),
+    path("api/v1/game/", GetGameById.as_view()),
     path("api/v1/auth/", include('djoser.urls')),
     re_path(r"^auth/", include('djoser.urls.authtoken'))
 ]
