@@ -20,7 +20,7 @@ from SchoolMathGamesApp.views import *
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/gameList/", GameList.as_view()),
-    path("api/v1/createGame/", CreateGame.as_view()),
+    path("api/v1/createGame", CreateGame.as_view()),
     path("api/v1/isValidToken/", CheckToken.as_view()),
     path("api/v1/game/", GetGameById.as_view()),
     path("api/v1/auth/", include('djoser.urls')),

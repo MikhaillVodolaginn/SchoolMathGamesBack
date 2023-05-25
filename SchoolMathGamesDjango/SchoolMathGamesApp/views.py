@@ -23,7 +23,7 @@ class CreateGame(APIView):
 
     @staticmethod
     def post(request):
-        return Response({'gameAllInfo': GameAllInfoMock.gameAllInfo})
+        return Response(GameAllInfoMock.gameAllInfo)
 
 
 class GetGameById(APIView):
