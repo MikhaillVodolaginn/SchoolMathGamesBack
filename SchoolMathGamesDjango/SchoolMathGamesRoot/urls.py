@@ -20,9 +20,15 @@ from SchoolMathGamesApp.views import *
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/gameList/", GameList.as_view()),
-    path("api/v1/createGame", CreateGame.as_view()),
-    path("api/v1/isValidToken/", CheckToken.as_view()),
     path("api/v1/game/", GetGameById.as_view()),
+    path("api/v1/createGame", CreateGame.as_view()),
+    path("api/v1/updateGameInfo", UpdateGameInfo.as_view()),
+    path("api/v1/addTeam", AddTeam.as_view()),
+    path("api/v1/updateTeam", UpdateTeam.as_view()),
+    path("api/v1/updateGameStatus", UpdateGameStatus.as_view()),
+    path("api/v1/deleteGame", DeleteGame.as_view()),
+    path("api/v1/deleteTeam", DeleteTeam.as_view()),
+    path("api/v1/isValidToken/", CheckToken.as_view()),
     path("api/v1/auth/", include('djoser.urls')),
     re_path(r"^auth/", include('djoser.urls.authtoken'))
 ]
