@@ -23,3 +23,7 @@ class GameAllInfoMock:
             {'id': 3, 'name': 'Джаваскриптизёры', 'sumScore': 30, 'scores': ['+1', '+2', '+3', '+4', '+5', '+6']}
         ]
     }
+
+    games = [
+        gameAllInfo,
+    ]
