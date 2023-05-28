@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "SchoolMathGamesApp",
+    "MathGamesApp",
     "rest_framework",
     "corsheaders",
     "rest_framework.authtoken",
@@ -89,7 +89,7 @@ WSGI_APPLICATION = "SchoolMathGamesRoot.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "schoolGames.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 

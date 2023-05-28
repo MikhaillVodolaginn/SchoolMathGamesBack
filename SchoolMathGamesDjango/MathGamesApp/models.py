@@ -81,6 +81,7 @@ class DominoTeam(models.Model):
     team_id = models.AutoField(primary_key=True)
     game_id = models.ForeignKey(Game, on_delete=models.CASCADE)
     team_name = models.CharField(max_length=255)
+    point0 = models.IntegerField()
     point1 = models.IntegerField()
     point2 = models.IntegerField()
     point3 = models.IntegerField()
@@ -108,7 +109,6 @@ class DominoTeam(models.Model):
     point25 = models.IntegerField()
     point26 = models.IntegerField()
     point27 = models.IntegerField()
-    point_empty = models.IntegerField()
 
 
 class BonusTeam(models.Model):
