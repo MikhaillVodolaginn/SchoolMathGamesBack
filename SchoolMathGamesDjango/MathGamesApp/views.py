@@ -1,14 +1,22 @@
+import json
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from rest_framework import serializers
+from django.core.serializers import serialize
 from .models import *
 
 
 class GameList(APIView):
     @staticmethod
     def get(request):
-        return Response(Game.objects.all())
+        games = Game.objects.all()
+        gameResponse = []
+        for game in games:
+            gameResponse.append({'id': game.game_id, 'name': game.game_name, 'status': game.status, 'type': game.type, 'start': game.start, 'time': game.duration})
+        return Response(gameResponse)
 
 
 class CheckToken(APIView):
@@ -38,14 +46,14 @@ class CreateGame(APIView):
             return Response({'error': 'Продолжительность игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
         game = Game()
-        game.name = name
+        game.game_name = name
         game.status = 0
         game.type = gameType
         game.start = start
         game.duration = duration
         game.save()
 
-        return Response(game)
+        return Response({'id': game.game_id, 'name': game.game_name, 'status': game.status, 'type': game.type, 'start': game.start, 'time': game.duration})
 
 
 class GetGameById(APIView):
@@ -56,7 +64,7 @@ class GetGameById(APIView):
             return Response({'error': 'Идентификатор игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             game = Game.objects.get(game_id=game_id)
-            return Response(game)
+            return Response({'id': game.game_id, 'name': game.game_name, 'status': game.status, 'type': game.type, 'start': game.start, 'time': game.duration})
         except Game.DoesNotExist:
             return Response({'error': 'Игра не найдена'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -70,11 +78,10 @@ class UpdateGameInfo(APIView):
         if game_id == -1:
             return Response({'error': 'Идентификатор игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        target_game = None
         try:
-            target_game = Game.objects.filter(game_id=game_id)[0]
+            target_game = Game.objects.get(game_id=game_id)
         except Game.DoesNotExist:
-            Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
         name = request.data.get('name', '')
         if not name == '':
@@ -89,12 +96,11 @@ class UpdateGameInfo(APIView):
             target_game.duration = timeGame
 
         target_game.save()
-        return Response(target_game)
+        return Response({'id': target_game.game_id, 'name': target_game.game_name, 'status': target_game.status, 'type': target_game.type, 'start': target_game.start, 'time': target_game.duration})
 
 
 class AddTeam(APIView):
     permission_classes = [IsAuthenticated]
-    id = 5
 
     @staticmethod
     def post(request):
@@ -103,21 +109,44 @@ class AddTeam(APIView):
         if game_id == -1:
             return Response({'error': 'Идентификатор игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        target_game = None
         try:
             target_game = Game.objects.get(game_id=game_id)
         except Game.DoesNotExist:
-            Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
         name = request.data.get('name', '')
         if name == '':
             return Response({'error': 'Название команды отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        team = {'id': AddTeam.id, 'name': name, 'sumScore': 30, 'scores': ['+1', '+2', '+3', '+4', '+5', '+6']}
-        AddTeam.id += 1
-        target_game['teams'].append(team)
+        if target_game.type == 0:
+            team = AbakaTeam()
+        elif target_game.type == 1:
+            team = BonusTeam()
+        else:
+            team = DominoTeam()
+        team.game = target_game
+        team.team_name = name
+        team.save()
 
-        return Response(team)
+        teamResponse = {'teamId': team.team_id, 'gameId': team.game.game_id, 'name': team.team_name}
+        if target_game.type == 2:
+            teamResponse['point0'] = team.point0
+
+        teamResponse |= {'points1': team.point1, 'points2': team.point2, 'points3': team.point3, 'points4': team.point4,
+                         'points5': team.point5, 'points6': team.point6, 'points7': team.point7, 'points8': team.point8,
+                         'points9': team.point9, 'points10': team.point10, 'points11': team.point11, 'points12': team.point12,
+                         'points13': team.point13, 'points14': team.point14, 'points15': team.point15, 'points16': team.point16,
+                         'points17': team.point17, 'points18': team.point18, 'points19': team.point19, 'points20': team.point20,
+                         'points21': team.point21, 'points22': team.point22, 'points23': team.point23, 'points24': team.point24}
+        if target_game.type == 1:
+            return Response(teamResponse)
+
+        teamResponse |= {'points25': team.point25, 'points26': team.point26, 'points27': team.point27}
+        if target_game.type == 2:
+            return Response(teamResponse)
+
+        teamResponse |= {'points28': team.point28, 'points29': team.point29, 'points30': team.point30}
+        return Response(teamResponse)
 
 
 class UpdateTeam(APIView):
@@ -129,31 +158,61 @@ class UpdateTeam(APIView):
         if game_id == -1:
             return Response({'error': 'Идентификатор игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        target_game = None
         try:
             target_game = Game.objects.get(game_id=game_id)
         except Game.DoesNotExist:
-            Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Костыль для постмана, если ты будешь нормально отправлять числа, такого быть не должно, но надо будет потестить
-        teamId = int(request.data.get('teamId', -1))
-        if teamId == -1:
+        team_id = int(request.data.get('teamId', -1))
+        if team_id == -1:
             return Response({'error': 'Идентификатор команды отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
-        target_team = None
-        for team in target_game['teams']:
-            if int(team['id']) == teamId:
-                target_team = team
-                break
 
-        if target_team is None:
-            return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
+        if target_game.type == 0:
+            try:
+                team = AbakaTeam.objects.get(team_id=team_id)
+            except AbakaTeam.DoesNotExist:
+                return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
+        elif target_game.type == 1:
+            try:
+                team = BonusTeam.objects.get(team_id=team_id)
+            except BonusTeam.DoesNotExist:
+                return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            try:
+                team = DominoTeam.objects.get(team_id=team_id)
+            except DominoTeam.DoesNotExist:
+                return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
         name = request.data.get('name', '')
         if name == '':
             return Response({'error': 'Новое название команды отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        target_team['name'] = name
-        return Response(target_team)
+        team.team_name = name
+        team.save()
+
+        teamResponse = {'teamId': team.team_id, 'gameId': team.game.game_id, 'name': team.team_name}
+        if target_game.type == 2:
+            teamResponse['point0'] = team.point0
+
+        teamResponse |= {'points1': team.point1, 'points2': team.point2, 'points3': team.point3, 'points4': team.point4,
+                         'points5': team.point5, 'points6': team.point6, 'points7': team.point7, 'points8': team.point8,
+                         'points9': team.point9, 'points10': team.point10, 'points11': team.point11,
+                         'points12': team.point12,
+                         'points13': team.point13, 'points14': team.point14, 'points15': team.point15,
+                         'points16': team.point16,
+                         'points17': team.point17, 'points18': team.point18, 'points19': team.point19,
+                         'points20': team.point20,
+                         'points21': team.point21, 'points22': team.point22, 'points23': team.point23,
+                         'points24': team.point24}
+        if target_game.type == 1:
+            return Response(teamResponse)
+
+        teamResponse |= {'points25': team.point25, 'points26': team.point26, 'points27': team.point27}
+        if target_game.type == 2:
+            return Response(teamResponse)
+
+        teamResponse |= {'points28': team.point28, 'points29': team.point29, 'points30': team.point30}
+        return Response(teamResponse)
 
 
 class UpdateGameStatus(APIView):
@@ -165,11 +224,10 @@ class UpdateGameStatus(APIView):
         if game_id == -1:
             return Response({'error': 'Идентификатор игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        target_game = None
         try:
             target_game = Game.objects.get(game_id=game_id)
         except Game.DoesNotExist:
-            Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
         game_status = int(request.data.get('status', -1))
         if game_status == -1:
@@ -177,7 +235,7 @@ class UpdateGameStatus(APIView):
 
         target_game.status = game_status
         target_game.save()
-        return Response(target_game)
+        return Response({'id': target_game.game_id, 'name': target_game.game_name, 'status': target_game.status, 'type': target_game.type, 'start': target_game.start, 'time': target_game.duration})
 
 
 class DeleteGame(APIView):
@@ -189,11 +247,10 @@ class DeleteGame(APIView):
         if game_id == -1:
             return Response({'error': 'Идентификатор игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        target_game = None
         try:
             target_game = Game.objects.get(game_id=game_id)
         except Game.DoesNotExist:
-            Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
         target_game.delete()
         return Response()
@@ -204,31 +261,34 @@ class DeleteTeam(APIView):
 
     @staticmethod
     def post(request):
-        gameId = int(request.data.get('gameId', -1))
-        if gameId == -1:
+        game_id = int(request.data.get('gameId', -1))
+        if game_id == -1:
             return Response({'error': 'Идентификатор игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        target_game = None
-        for game in GamesMock.gameList:
-            if gameId == int(game['id']):
-                target_game = GameAllInfoMock.games[0]
-                break
-
-        if target_game is None:
+        try:
+            target_game = Game.objects.get(game_id=game_id)
+        except Game.DoesNotExist:
             return Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Костыль для постмана, если ты будешь нормально отправлять числа, такого быть не должно, но надо будет потестить
-        teamId = int(request.data.get('teamId', -1))
-        if teamId == -1:
+        team_id = int(request.data.get('teamId', -1))
+        if team_id == -1:
             return Response({'error': 'Идентификатор команды отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
-        target_team = None
-        for i, team in enumerate(target_game['teams']):
-            if int(team['id']) == teamId:
-                target_game['teams'].pop(i)
-                target_team = team
-                break
 
-        if target_team is None:
-            return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
+        if target_game.type == 0:
+            try:
+                target_team = AbakaTeam.objects.get(team_id=team_id)
+            except AbakaTeam.DoesNotExist:
+                return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
+        elif target_game.type == 1:
+            try:
+                target_team = BonusTeam.objects.get(team_id=team_id)
+            except BonusTeam.DoesNotExist:
+                return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            try:
+                target_team = DominoTeam.objects.get(team_id=team_id)
+            except DominoTeam.DoesNotExist:
+                return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
+        target_team.delete()
         return Response(target_team)
