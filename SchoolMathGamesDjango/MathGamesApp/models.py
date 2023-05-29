@@ -46,7 +46,8 @@ class AbakaTeam(models.Model):
     point30 = models.IntegerField(default=0)
 
     def update_field(self, field, new_value):
-        self.__setattr__(field, new_value)
+        field_in_db = f"point{'0' if field < 10 else ''}{field}"
+        self.__setattr__(field_in_db, new_value)
 
 
 class DominoTeam(models.Model):
@@ -83,7 +84,8 @@ class DominoTeam(models.Model):
     point27 = models.IntegerField(default=2)
 
     def update_field(self, field, new_value):
-        self.__setattr__(field, new_value)
+        field_in_db = f"point{'0' if field < 10 else ''}{field}"
+        self.__setattr__(field_in_db, new_value)
 
 
 class BonusTeam(models.Model):
@@ -116,4 +118,5 @@ class BonusTeam(models.Model):
     point24 = models.IntegerField(default=0)
 
     def update_field(self, field, new_value):
-        self.__setattr__(field, new_value)
+        field_in_db = f"point{'0' if field < 10 else ''}{field}"
+        self.__setattr__(field_in_db, new_value)

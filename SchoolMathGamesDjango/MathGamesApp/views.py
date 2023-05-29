@@ -393,6 +393,8 @@ class DeleteTeam(APIView):
         if team_id == -1:
             return Response({'error': 'Идентификатор команды отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
+
+
         if target_game.type == 0:
             try:
                 target_team = AbakaTeam.objects.get(team_id=team_id)
@@ -409,8 +411,8 @@ class DeleteTeam(APIView):
             except DominoTeam.DoesNotExist:
                 return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                     'scores': list(AbakaSerializer(team).data.values())}
+        team_resp = {'teamId': target_team.team_id, 'name': target_team.team_name,
+                     'scores': list(AbakaSerializer(target_team).data.values())}
         team_resp['scores'].pop(0)
         team_resp['scores'].pop(0)
         team_resp['scores'].pop(-1)
@@ -449,8 +451,9 @@ class ChangeScores(APIView):
         changeScores = request.data.get('changeScores', [])
 
         for score in changeScores:
-            team = team_set.get(team_id=score.teamId)
-            team.update_field(score.exercise, score.value)
+            print(score)
+            team = team_set.get(team_id=int(score['teamId']))
+            team.update_field(score['exercise'], score['value'])
             team.save()
 
         return Response()
