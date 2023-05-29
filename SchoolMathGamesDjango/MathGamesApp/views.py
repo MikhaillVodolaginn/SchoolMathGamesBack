@@ -36,7 +36,7 @@ class CreateGame(APIView):
         name = request.data.get('name', '')
         if name == '':
             return Response({'error': 'Название игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
-        gameType = int(request.data.get('gameType', -1))
+        gameType = int(request.data.get('type', -1))
         if gameType == -1:
             return Response({'error': 'Тип игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
         start = int(request.data.get('start', -1))
