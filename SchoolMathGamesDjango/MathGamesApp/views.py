@@ -210,9 +210,10 @@ class AddTeam(APIView):
         except Game.DoesNotExist:
             return Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        name = request.data.get('name', '')
-        if name == '':
-            return Response({'error': 'Название команды отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
+        # team_id = request.data.get('teamId', '')
+        # if team_id == '':
+        #     return Response({'error': 'Название команды отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
+
 
         if target_game.type == 0:
             team = AbakaTeam()
@@ -220,6 +221,8 @@ class AddTeam(APIView):
             team = BonusTeam()
         else:
             team = DominoTeam()
+
+        name = request.data.get('name')
         team.game = target_game
         team.team_name = name
         team.save()
