@@ -26,6 +26,7 @@ urlpatterns = [
     path("api/v1/addTeam", AddTeam.as_view()),
     path("api/v1/updateTeam", UpdateTeam.as_view()),
     path("api/v1/updateGameStatus", UpdateGameStatus.as_view()),
+    path("api/v1/changeScores", ChangeScores.as_view()),
     path("api/v1/deleteGame", DeleteGame.as_view()),
     path("api/v1/deleteTeam", DeleteTeam.as_view()),
     path("api/v1/isValidToken/", CheckToken.as_view()),

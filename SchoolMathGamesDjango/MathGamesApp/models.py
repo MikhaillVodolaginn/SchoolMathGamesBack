@@ -45,6 +45,9 @@ class AbakaTeam(models.Model):
     point29 = models.IntegerField(default=0)
     point30 = models.IntegerField(default=0)
 
+    def update_field(self, field, new_value):
+        self.__setattr__(field, new_value)
+
 
 class DominoTeam(models.Model):
     team_id = models.AutoField(primary_key=True)
@@ -79,6 +82,9 @@ class DominoTeam(models.Model):
     point26 = models.IntegerField(default=2)
     point27 = models.IntegerField(default=2)
 
+    def update_field(self, field, new_value):
+        self.__setattr__(field, new_value)
+
 
 class BonusTeam(models.Model):
     team_id = models.AutoField(primary_key=True)
@@ -108,3 +114,6 @@ class BonusTeam(models.Model):
     point22 = models.IntegerField(default=0)
     point23 = models.IntegerField(default=0)
     point24 = models.IntegerField(default=0)
+
+    def update_field(self, field, new_value):
+        self.__setattr__(field, new_value)

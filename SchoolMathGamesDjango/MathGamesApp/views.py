@@ -4,9 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from rest_framework import serializers
-from django.core.serializers import serialize
 from .models import *
+from .serializers import *
 
 
 class GameList(APIView):
@@ -15,8 +14,15 @@ class GameList(APIView):
         games = Game.objects.all()
         gameResponse = []
         for game in games:
+            if game.type == 0:
+                teams = [AbakaSerializer(team).data for team in AbakaTeam.objects.filter(game=game)]
+            elif game.type == 1:
+                teams = [BonusSerializer(team).data for team in BonusTeam.objects.filter(game=game)]
+            else:
+                teams = [DominoSerializer(team).data for team in DominoTeam.objects.filter(game_id=game)]
+
             gameResponse.append({'id': game.game_id, 'name': game.game_name, 'status': game.status, 'type': game.type,
-                                 'start': game.start, 'time': game.duration})
+                                 'start': game.start, 'time': game.duration, 'teams': teams})
         return Response(gameResponse)
 
 
@@ -67,8 +73,15 @@ class GetGameById(APIView):
             return Response({'error': 'Идентификатор игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             game = Game.objects.get(game_id=game_id)
+            if game.type == 0:
+                teams = [AbakaSerializer(team).data for team in AbakaTeam.objects.filter(game=game)]
+            elif game.type == 1:
+                teams = [BonusSerializer(team).data for team in BonusTeam.objects.filter(game=game)]
+            else:
+                teams = [DominoSerializer(team).data for team in DominoTeam.objects.filter(game_id=game)]
+
             return Response({'id': game.game_id, 'name': game.game_name, 'status': game.status, 'type': game.type,
-                             'start': game.start, 'timeGame': game.duration, 'teams': []})
+                             'start': game.start, 'time': game.duration, 'teams': teams})
         except Game.DoesNotExist:
             return Response({'error': 'Игра не найдена'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -100,8 +113,17 @@ class UpdateGameInfo(APIView):
             target_game.duration = timeGame
 
         target_game.save()
+
+        if target_game.type == 0:
+            teams = [AbakaSerializer(team).data for team in AbakaTeam.objects.filter(game=target_game)]
+        elif target_game.type == 1:
+            teams = [BonusSerializer(team).data for team in BonusTeam.objects.filter(game=target_game)]
+        else:
+            teams = [DominoSerializer(team).data for team in DominoTeam.objects.filter(game_id=target_game)]
+
         return Response({'id': target_game.game_id, 'name': target_game.game_name, 'status': target_game.status,
-                         'type': target_game.type, 'start': target_game.start, 'time': target_game.duration})
+                         'type': target_game.type, 'start': target_game.start, 'time': target_game.duration,
+                         'teams': teams})
 
 
 class AddTeam(APIView):
@@ -133,65 +155,12 @@ class AddTeam(APIView):
         team.team_name = name
         team.save()
 
-        team_resp = get_team_with_scores(target_game, team)
-
-        return Response(team_resp)
-
-        # team_response = {'teamId': team.team_id, 'gameId': team.game.game_id, 'name': team.team_name}
-        # scores = []
-        # team_response['scores'] = scores
-        #
-        # if target_game.type == 2:
-        #     scores.append(team.point0)
-        #
-        # scores.extend([team.point1, team.point2, team.point3, team.point4,
-        #                team.point5, team.point6, team.point7, team.point8,
-        #                team.point9, team.point10, team.point11, team.point12,
-        #                team.point13, team.point14, team.point15, team.point16,
-        #                team.point17, team.point18, team.point19, team.point20,
-        #                team.point21, team.point22, team.point23, team.point24]
-        #               )
-        #
-        # if target_game.type == 1:
-        #     return Response(team_response)
-        #
-        # scores.extend([team.point25, team.point26, team.point27])
-        #
-        # if target_game.type == 2:
-        #     return Response(team_response)
-        #
-        # scores.extend([team.point28, team.point29, team.point30])
-        #
-        # return Response(team_response)
-
-
-def get_team_with_scores(game, team):
-    team_with_scores = {'teamId': team.team_id, 'name': team.team_name, 'sumScore': 0}
-    scores = []
-    team_with_scores['scores'] = scores
-
-    if game.type == 2:
-        scores.append(team.point0)
-
-    scores.extend([team.point1, team.point2, team.point3, team.point4,
-                   team.point5, team.point6, team.point7, team.point8,
-                   team.point9, team.point10, team.point11, team.point12,
-                   team.point13, team.point14, team.point15, team.point16,
-                   team.point17, team.point18, team.point19, team.point20,
-                   team.point21, team.point22, team.point23, team.point24]
-                  )
-
-    if game.type == 1:
-        return team_with_scores
-
-    scores.extend([team.point25, team.point26, team.point27])
-
-    if game.type == 2:
-        return team_with_scores
-
-    scores.extend([team.point28, team.point29, team.point30])
-
-    return team_with_scores
+        if target_game.type == 0:
+            return Response(AbakaSerializer(team).data)
+        elif target_game.type == 1:
+            return Response(BonusSerializer(team).data)
+        else:
+            return Response(DominoSerializer(team).data)
 
 
 class UpdateTeam(APIView):
@@ -236,31 +205,12 @@ class UpdateTeam(APIView):
         team.team_name = name
         team.save()
 
-        return Response(get_team_with_scores(target_game, team))
-
-        # teamResponse = {'teamId': team.team_id, 'gameId': team.game.game_id, 'name': team.team_name}
-        # if target_game.type == 2:
-        #     teamResponse['point0'] = team.point0
-        #
-        # teamResponse |= {'points1': team.point1, 'points2': team.point2, 'points3': team.point3, 'points4': team.point4,
-        #                  'points5': team.point5, 'points6': team.point6, 'points7': team.point7, 'points8': team.point8,
-        #                  'points9': team.point9, 'points10': team.point10, 'points11': team.point11,
-        #                  'points12': team.point12,
-        #                  'points13': team.point13, 'points14': team.point14, 'points15': team.point15,
-        #                  'points16': team.point16,
-        #                  'points17': team.point17, 'points18': team.point18, 'points19': team.point19,
-        #                  'points20': team.point20,
-        #                  'points21': team.point21, 'points22': team.point22, 'points23': team.point23,
-        #                  'points24': team.point24}
-        # if target_game.type == 1:
-        #     return Response(teamResponse)
-        #
-        # teamResponse |= {'points25': team.point25, 'points26': team.point26, 'points27': team.point27}
-        # if target_game.type == 2:
-        #     return Response(teamResponse)
-        #
-        # teamResponse |= {'points28': team.point28, 'points29': team.point29, 'points30': team.point30}
-        # return Response(teamResponse)
+        if target_game.type == 0:
+            return Response(AbakaSerializer(team).data)
+        elif target_game.type == 1:
+            return Response(BonusSerializer(team).data)
+        else:
+            return Response(DominoSerializer(team).data)
 
 
 class UpdateGameStatus(APIView):
@@ -283,9 +233,17 @@ class UpdateGameStatus(APIView):
 
         target_game.status = game_status
         target_game.save()
+
+        if target_game.type == 0:
+            teams = [AbakaSerializer(team).data for team in AbakaTeam.objects.filter(game=target_game)]
+        elif target_game.type == 1:
+            teams = [BonusSerializer(team).data for team in BonusTeam.objects.filter(game=target_game)]
+        else:
+            teams = [DominoSerializer(team).data for team in DominoTeam.objects.filter(game_id=target_game)]
+
         return Response({'id': target_game.game_id, 'name': target_game.game_name, 'status': target_game.status,
                          'type': target_game.type, 'start': target_game.start, 'time': target_game.duration,
-                         'teams': []})
+                         'teams': teams})
 
 
 class DeleteGame(APIView):
@@ -341,7 +299,44 @@ class DeleteTeam(APIView):
             except DominoTeam.DoesNotExist:
                 return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        team_resp = get_team_with_scores(target_game, target_team)
+        if target_game.type == 0:
+            team_resp = Response(AbakaSerializer(target_team).data)
+        elif target_game.type == 1:
+            team_resp = Response(BonusSerializer(target_team).data)
+        else:
+            team_resp = Response(DominoSerializer(target_team).data)
 
         target_team.delete()
-        return Response(team_resp)
+        return team_resp
+
+
+class ChangeScores(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @staticmethod
+    def post(request):
+        game_id = int(request.data.get('gameId', -1))
+        if game_id == -1:
+            return Response({'error': 'Идентификатор игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            target_game = Game.objects.get(game_id=game_id)
+        except Game.DoesNotExist:
+            return Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if target_game.type == 0:
+            team_set = AbakaTeam.objects.filter(game=target_game)
+        elif target_game.type == 1:
+            team_set = BonusTeam.objects.filter(game=target_game)
+        else:
+            team_set = DominoTeam.objects.filter(game=target_game)
+
+        changeScores = request.data.get('changeScores', [])
+
+        for score in changeScores:
+            team = team_set.get(team_id=score.teamId)
+            team.update_field(score.exercise, score.value)
+            team.save()
+
+        return Response()
+
