@@ -227,12 +227,19 @@ class AddTeam(APIView):
         team.team_name = name
         team.save()
 
-        if target_game.type == 0:
-            return Response(AbakaSerializer(team).data)
-        elif target_game.type == 1:
-            return Response(BonusSerializer(team).data)
+        team_resp = {'teamId': team.team_id, 'name': team.team_name,
+                     'scores': list(AbakaSerializer(team).data.values())}
+        team_resp['scores'].pop(0)
+        team_resp['scores'].pop(0)
+        team_resp['scores'].pop(-1)
+        if target_game.type == 2:
+            for i in range(len(team_resp['scores'])):
+                if team_resp['scores'][i] == 0:
+                    team_resp['sumScore'] += i
         else:
-            return Response(DominoSerializer(team).data)
+            team_resp['sumScore'] = sum(team_resp['scores'])
+
+        return Response(team_resp)
 
 
 class UpdateTeam(APIView):
@@ -277,12 +284,19 @@ class UpdateTeam(APIView):
         team.team_name = name
         team.save()
 
-        if target_game.type == 0:
-            return Response(AbakaSerializer(team).data)
-        elif target_game.type == 1:
-            return Response(BonusSerializer(team).data)
+        team_resp = {'teamId': team.team_id, 'name': team.team_name,
+                     'scores': list(AbakaSerializer(team).data.values())}
+        team_resp['scores'].pop(0)
+        team_resp['scores'].pop(0)
+        team_resp['scores'].pop(-1)
+        if target_game.type == 2:
+            for i in range(len(team_resp['scores'])):
+                if team_resp['scores'][i] == 0:
+                    team_resp['sumScore'] += i
         else:
-            return Response(DominoSerializer(team).data)
+            team_resp['sumScore'] = sum(team_resp['scores'])
+
+        return Response(team_resp)
 
 
 class UpdateGameStatus(APIView):
@@ -395,15 +409,20 @@ class DeleteTeam(APIView):
             except DominoTeam.DoesNotExist:
                 return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if target_game.type == 0:
-            team_resp = Response(AbakaSerializer(target_team).data)
-        elif target_game.type == 1:
-            team_resp = Response(BonusSerializer(target_team).data)
+        team_resp = {'teamId': team.team_id, 'name': team.team_name,
+                     'scores': list(AbakaSerializer(team).data.values())}
+        team_resp['scores'].pop(0)
+        team_resp['scores'].pop(0)
+        team_resp['scores'].pop(-1)
+        if target_game.type == 2:
+            for i in range(len(team_resp['scores'])):
+                if team_resp['scores'][i] == 0:
+                    team_resp['sumScore'] += i
         else:
-            team_resp = Response(DominoSerializer(target_team).data)
+            team_resp['sumScore'] = sum(team_resp['scores'])
 
         target_team.delete()
-        return team_resp
+        return Response(team_resp)
 
 
 class ChangeScores(APIView):
