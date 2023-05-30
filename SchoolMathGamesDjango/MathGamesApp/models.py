@@ -8,6 +8,7 @@ class Game(models.Model):
     type = models.IntegerField()
     start = models.IntegerField()
     duration = models.IntegerField()
+    end_time = models.IntegerField(default=0, blank=False)
 
 
 class AbakaTeam(models.Model):

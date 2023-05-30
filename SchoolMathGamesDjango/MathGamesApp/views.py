@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -8,42 +9,19 @@ from .serializers import *
 class GameList(APIView):
     @staticmethod
     def get(request):
-        games = Game.objects.all()
-        gameResponse = []
-        for game in games:
-            teams = []
-            if game.type == 0:
-                for team in AbakaTeam.objects.filter(game=game):
-                    team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                                 'scores': list(AbakaSerializer(team).data.values())}
-                    team_resp['scores'].pop(0)
-                    team_resp['scores'].pop(0)
-                    team_resp['scores'].pop(-1)
-                    team_resp['sumScore'] = sum(team_resp['scores'])
-                    teams.append(team_resp)
-            elif game.type == 1:
-                for team in BonusTeam.objects.filter(game=game):
-                    team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                                 'scores': list(BonusSerializer(team).data.values())}
-                    team_resp['scores'].pop(0)
-                    team_resp['scores'].pop(0)
-                    team_resp['scores'].pop(-1)
-                    team_resp['sumScore'] = sum(team_resp['scores'])
-                    teams.append(team_resp)
-            else:
-                for team in DominoTeam.objects.filter(game=game):
-                    team_resp = {'teamId': team.team_id, 'name': team.team_name, 'sumScore': 0,
-                                 'scores': list(DominoSerializer(team).data.values())}
-                    team_resp['scores'].pop(0)
-                    team_resp['scores'].pop(0)
-                    team_resp['scores'].pop(-1)
-                    for i in range(len(team_resp['scores'])):
-                        if team_resp['scores'][i] == 0:
-                            team_resp['sumScore'] += i
-                    teams.append(team_resp)
+        history = bool(request.GET.get('history', False))
+        if history:
+            games = Game.objects.filter(status=4).order_by('-start')
+        else:
+            games = Game.objects.filter(~Q(status=4)).order_by('-start')
 
-            gameResponse.append({'id': game.game_id, 'name': game.game_name, 'status': game.status, 'type': game.type,
-                                 'start': game.start, 'time': game.duration, 'teams': teams})
+        gameResponse = [{'id': game.game_id,
+                         'name': game.game_name,
+                         'status': game.status,
+                         'type': game.type,
+                         'start': game.start,
+                         'time': game.duration} for game in games]
+
         return Response(gameResponse)
 
 
@@ -81,9 +59,13 @@ class CreateGame(APIView):
         game.duration = duration
         game.save()
 
-        return Response(
-            {'id': game.game_id, 'name': game.game_name, 'status': game.status, 'type': game.type, 'start': game.start,
-             'timeGame': game.duration, 'teams': []})
+        return Response({'id': game.game_id,
+                         'name': game.game_name,
+                         'status': game.status,
+                         'type': game.type,
+                         'start': game.start,
+                         'timeGame': game.duration,
+                         'teams': []})
 
 
 class GetGameById(APIView):
@@ -98,30 +80,21 @@ class GetGameById(APIView):
             if game.type == 0:
                 for team in AbakaTeam.objects.filter(game=game):
                     team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                                 'scores': list(AbakaSerializer(team).data.values())}
-                    team_resp['scores'].pop(0)
-                    team_resp['scores'].pop(0)
-                    team_resp['scores'].pop(-1)
+                                 'scores': list(GamePointsSerializer(team).data.values())}
                     team_resp['sumScore'] = sum(team_resp['scores'])
                     teams.append(team_resp)
             elif game.type == 1:
                 for team in BonusTeam.objects.filter(game=game):
                     team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                                 'scores': list(BonusSerializer(team).data.values())}
-                    team_resp['scores'].pop(0)
-                    team_resp['scores'].pop(0)
-                    team_resp['scores'].pop(-1)
+                                 'scores': list(GamePointsSerializer(team).data.values())}
                     team_resp['sumScore'] = sum(team_resp['scores'])
                     teams.append(team_resp)
             else:
                 for team in DominoTeam.objects.filter(game=game):
                     team_resp = {'teamId': team.team_id, 'name': team.team_name, 'sumScore': 0,
-                                 'scores': list(DominoSerializer(team).data.values())}
-                    team_resp['scores'].pop(0)
-                    team_resp['scores'].pop(0)
-                    team_resp['scores'].pop(-1)
+                                 'scores': list(GamePointsSerializer(team).data.values())}
                     for i in range(len(team_resp['scores'])):
-                        if team_resp['scores'][i] == 0:
+                        if team_resp['scores'][i] <= 0:
                             team_resp['sumScore'] += i
                     teams.append(team_resp)
 
@@ -163,28 +136,19 @@ class UpdateGameInfo(APIView):
         if target_game.type == 0:
             for team in AbakaTeam.objects.filter(game=target_game):
                 team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                             'scores': list(AbakaSerializer(team).data.values())}
-                team_resp['scores'].pop(0)
-                team_resp['scores'].pop(0)
-                team_resp['scores'].pop(-1)
+                             'scores': list(GamePointsSerializer(team).data.values())}
                 team_resp['sumScore'] = sum(team_resp['scores'])
                 teams.append(team_resp)
         elif target_game.type == 1:
             for team in BonusTeam.objects.filter(game=target_game):
                 team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                             'scores': list(BonusSerializer(team).data.values())}
-                team_resp['scores'].pop(0)
-                team_resp['scores'].pop(0)
-                team_resp['scores'].pop(-1)
+                             'scores': list(GamePointsSerializer(team).data.values())}
                 team_resp['sumScore'] = sum(team_resp['scores'])
                 teams.append(team_resp)
         else:
             for team in DominoTeam.objects.filter(game=target_game):
                 team_resp = {'teamId': team.team_id, 'name': team.team_name, 'sumScore': 0,
-                             'scores': list(DominoSerializer(team).data.values())}
-                team_resp['scores'].pop(0)
-                team_resp['scores'].pop(0)
-                team_resp['scores'].pop(-1)
+                             'scores': list(GamePointsSerializer(team).data.values())}
                 for i in range(len(team_resp['scores'])):
                     if team_resp['scores'][i] == 0:
                         team_resp['sumScore'] += i
@@ -210,10 +174,9 @@ class AddTeam(APIView):
         except Game.DoesNotExist:
             return Response({'error': 'Игра не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # team_id = request.data.get('teamId', '')
-        # if team_id == '':
-        #     return Response({'error': 'Название команды отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
-
+        name = request.data.get('name', '')
+        if name == '':
+            return Response({'error': 'Название команды отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
         if target_game.type == 0:
             team = AbakaTeam()
@@ -222,16 +185,12 @@ class AddTeam(APIView):
         else:
             team = DominoTeam()
 
-        name = request.data.get('name')
         team.game = target_game
         team.team_name = name
         team.save()
 
         team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                     'scores': list(AbakaSerializer(team).data.values())}
-        team_resp['scores'].pop(0)
-        team_resp['scores'].pop(0)
-        team_resp['scores'].pop(-1)
+                     'scores': list(GamePointsSerializer(team).data.values())}
         if target_game.type == 2:
             for i in range(len(team_resp['scores'])):
                 if team_resp['scores'][i] == 0:
@@ -285,10 +244,7 @@ class UpdateTeam(APIView):
         team.save()
 
         team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                     'scores': list(AbakaSerializer(team).data.values())}
-        team_resp['scores'].pop(0)
-        team_resp['scores'].pop(0)
-        team_resp['scores'].pop(-1)
+                     'scores': list(GamePointsSerializer(team).data.values())}
         if target_game.type == 2:
             for i in range(len(team_resp['scores'])):
                 if team_resp['scores'][i] == 0:
@@ -318,34 +274,28 @@ class UpdateGameStatus(APIView):
             return Response({'error': 'Новый статус игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
         target_game.status = game_status
+        end_time = int(request.data.get('endTime', -1))
+        if not end_time == -1:
+            target_game.end_time = end_time
         target_game.save()
 
         teams = []
         if target_game.type == 0:
             for team in AbakaTeam.objects.filter(game=target_game):
                 team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                             'scores': list(AbakaSerializer(team).data.values())}
-                team_resp['scores'].pop(0)
-                team_resp['scores'].pop(0)
-                team_resp['scores'].pop(-1)
+                             'scores': list(GamePointsSerializer(team).data.values())}
                 team_resp['sumScore'] = sum(team_resp['scores'])
                 teams.append(team_resp)
         elif target_game.type == 1:
             for team in BonusTeam.objects.filter(game=target_game):
                 team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                             'scores': list(BonusSerializer(team).data.values())}
-                team_resp['scores'].pop(0)
-                team_resp['scores'].pop(0)
-                team_resp['scores'].pop(-1)
+                             'scores': list(GamePointsSerializer(team).data.values())}
                 team_resp['sumScore'] = sum(team_resp['scores'])
                 teams.append(team_resp)
         else:
             for team in DominoTeam.objects.filter(game=target_game):
                 team_resp = {'teamId': team.team_id, 'name': team.team_name, 'sumScore': 0,
-                             'scores': list(DominoSerializer(team).data.values())}
-                team_resp['scores'].pop(0)
-                team_resp['scores'].pop(0)
-                team_resp['scores'].pop(-1)
+                             'scores': list(GamePointsSerializer(team).data.values())}
                 for i in range(len(team_resp['scores'])):
                     if team_resp['scores'][i] == 0:
                         team_resp['sumScore'] += i
@@ -393,8 +343,6 @@ class DeleteTeam(APIView):
         if team_id == -1:
             return Response({'error': 'Идентификатор команды отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
 
-
-
         if target_game.type == 0:
             try:
                 target_team = AbakaTeam.objects.get(team_id=team_id)
@@ -412,10 +360,7 @@ class DeleteTeam(APIView):
                 return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
         team_resp = {'teamId': target_team.team_id, 'name': target_team.team_name,
-                     'scores': list(AbakaSerializer(target_team).data.values())}
-        team_resp['scores'].pop(0)
-        team_resp['scores'].pop(0)
-        team_resp['scores'].pop(-1)
+                     'scores': list(GamePointsSerializer(target_team).data.values())}
         if target_game.type == 2:
             for i in range(len(team_resp['scores'])):
                 if team_resp['scores'][i] == 0:
@@ -458,3 +403,32 @@ class ChangeScores(APIView):
 
         return Response()
 
+
+domino_dict = {'point00': [0, 10],
+               'point01': [0, 1, 1],
+               'point02': [0, 2, 2],
+               'point03': [0, 3, 3],
+               'point04': [0, 4, 4],
+               'point05': [0, 5, 5],
+               'point06': [0, 6, 6],
+               'point07': [-1, 2, 1],
+               'point08': [-1, 3, 2],
+               'point09': [-1, 4, 3],
+               'point10': [-1, 5, 4],
+               'point11': [-1, 6, 5],
+               'point12': [-1, 7, 6],
+               'point13': [-2, 4, 2],
+               'point14': [-2, 5, 3],
+               'point15': [-2, 6, 4],
+               'point16': [-2, 7, 5],
+               'point17': [-2, 8, 6],
+               'point18': [-3, 6, 3],
+               'point19': [-3, 7, 4],
+               'point20': [-3, 8, 5],
+               'point21': [-3, 9, 6],
+               'point22': [-4, 8, 4],
+               'point23': [-4, 9, 5],
+               'point24': [-4, 10, 6],
+               'point25': [-5, 10, 5],
+               'point26': [-5, 11, 6],
+               'point27': [-6, 12, 6]}
