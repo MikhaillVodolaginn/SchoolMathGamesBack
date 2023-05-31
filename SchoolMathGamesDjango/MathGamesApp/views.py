@@ -9,8 +9,8 @@ from .serializers import *
 class GameList(APIView):
     @staticmethod
     def get(request):
-        history = bool(request.GET.get('history', False))
-        if history:
+        history = request.GET.get('history', False)
+        if history == 'true':
             games = Game.objects.filter(status=4).order_by('-start')
         else:
             games = Game.objects.filter(~Q(status=4)).order_by('-start')
@@ -92,7 +92,7 @@ class GetGameById(APIView):
             else:
                 for team in DominoTeam.objects.filter(game=game):
                     team_resp = {'teamId': team.team_id, 'name': team.team_name, 'sumScore': 0,
-                                 'scores': list(GamePointsSerializer(team).data.values())}
+                                 'scores': list(GamePointsSerializerDomino(team).data.values())}
                     for i in range(len(team_resp['scores'])):
                         if team_resp['scores'][i] <= 0:
                             team_resp['sumScore'] += i
@@ -148,7 +148,7 @@ class UpdateGameInfo(APIView):
         else:
             for team in DominoTeam.objects.filter(game=target_game):
                 team_resp = {'teamId': team.team_id, 'name': team.team_name, 'sumScore': 0,
-                             'scores': list(GamePointsSerializer(team).data.values())}
+                             'scores': list(GamePointsSerializerDomino(team).data.values())}
                 for i in range(len(team_resp['scores'])):
                     if team_resp['scores'][i] == 0:
                         team_resp['sumScore'] += i
@@ -189,8 +189,15 @@ class AddTeam(APIView):
         team.team_name = name
         team.save()
 
-        team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                     'scores': list(GamePointsSerializer(team).data.values())}
+
+
+        team_resp = {'teamId': team.team_id, 'name': team.team_name}
+
+        if target_game.type == 2:
+            team_resp['scores'] = list(GamePointsSerializerDomino(team).data.values())
+        else:
+            team_resp['scores'] = list(GamePointsSerializer(team).data.values())
+
         if target_game.type == 2:
             for i in range(len(team_resp['scores'])):
                 if team_resp['scores'][i] == 0:
@@ -243,8 +250,13 @@ class UpdateTeam(APIView):
         team.team_name = name
         team.save()
 
-        team_resp = {'teamId': team.team_id, 'name': team.team_name,
-                     'scores': list(GamePointsSerializer(team).data.values())}
+        team_resp = {'teamId': team.team_id, 'name': team.team_name}
+
+        if target_game.type == 2:
+            team_resp['scores'] = list(GamePointsSerializerDomino(team).data.values())
+        else:
+            team_resp['scores'] = list(GamePointsSerializer(team).data.values())
+
         if target_game.type == 2:
             for i in range(len(team_resp['scores'])):
                 if team_resp['scores'][i] == 0:
@@ -295,7 +307,7 @@ class UpdateGameStatus(APIView):
         else:
             for team in DominoTeam.objects.filter(game=target_game):
                 team_resp = {'teamId': team.team_id, 'name': team.team_name, 'sumScore': 0,
-                             'scores': list(GamePointsSerializer(team).data.values())}
+                             'scores': list(GamePointsSerializerDomino(team).data.values())}
                 for i in range(len(team_resp['scores'])):
                     if team_resp['scores'][i] == 0:
                         team_resp['sumScore'] += i
@@ -359,8 +371,13 @@ class DeleteTeam(APIView):
             except DominoTeam.DoesNotExist:
                 return Response({'error': 'Команда не найдена!'}, status=status.HTTP_400_BAD_REQUEST)
 
-        team_resp = {'teamId': target_team.team_id, 'name': target_team.team_name,
-                     'scores': list(GamePointsSerializer(target_team).data.values())}
+        team_resp = {'teamId': target_team.team_id, 'name': target_team.team_name}
+
+        if target_game.type == 2:
+            team_resp['scores'] = list(GamePointsSerializerDomino(target_team).data.values())
+        else:
+            team_resp['scores'] = list(GamePointsSerializer(target_team).data.values())
+
         if target_game.type == 2:
             for i in range(len(team_resp['scores'])):
                 if team_resp['scores'][i] == 0:
