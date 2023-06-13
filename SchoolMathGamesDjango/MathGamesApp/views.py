@@ -1,3 +1,5 @@
+import datetime
+
 from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -98,8 +100,18 @@ class GetGameById(APIView):
                             team_resp['sumScore'] += i
                     teams.append(team_resp)
 
-            return Response({'id': game.game_id, 'name': game.game_name, 'status': game.status, 'type': game.type,
-                             'start': game.start, 'time': game.duration, 'teams': teams})
+            result = {'id': game.game_id, 'name': game.game_name, 'status': game.status, 'type': game.type,
+                             'start': game.start, 'time': game.duration, 'teams': teams}
+
+            if game.status == 0:
+                return Response(result)
+
+            if game.status == 1:
+                result['time'] = (game.start // 1000 - int(datetime.datetime.now().timestamp())) + game.duration
+            else:
+                result['time'] = (game.start // 1000 - game.end_time) + game.duration
+
+            return Response(result)
         except Game.DoesNotExist:
             return Response({'error': 'Игра не найдена'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -189,8 +201,6 @@ class AddTeam(APIView):
         team.team_name = name
         team.save()
 
-
-
         team_resp = {'teamId': team.team_id, 'name': team.team_name}
 
         if target_game.type == 2:
@@ -275,7 +285,6 @@ class UpdateGameStatus(APIView):
         game_id = int(request.data.get('gameId', -1))
         if game_id == -1:
             return Response({'error': 'Идентификатор игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
             target_game = Game.objects.get(game_id=game_id)
         except Game.DoesNotExist:
@@ -284,6 +293,15 @@ class UpdateGameStatus(APIView):
         game_status = int(request.data.get('status', -1))
         if game_status == -1:
             return Response({'error': 'Новый статус игры отсутствует!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if game_status == 1 and target_game.status != 0:
+            target_game.duration = target_game.duration + (int(datetime.datetime.now().timestamp()) - target_game.end_time)
+
+        if game_status == 2 and target_game.status == 1:
+            target_game.end_time = int(datetime.datetime.now().timestamp())
+
+        if game_status == 1 and target_game.status == 0:
+            target_game.start = int(datetime.datetime.now().timestamp()) * 1000
 
         target_game.status = game_status
         end_time = int(request.data.get('endTime', -1))
@@ -313,9 +331,16 @@ class UpdateGameStatus(APIView):
                         team_resp['sumScore'] += i
                 teams.append(team_resp)
 
-        return Response({'id': target_game.game_id, 'name': target_game.game_name, 'status': target_game.status,
+        result = {'id': target_game.game_id, 'name': target_game.game_name, 'status': target_game.status,
                          'type': target_game.type, 'start': target_game.start, 'time': target_game.duration,
-                         'teams': teams})
+                         'teams': teams}
+
+        if target_game.status == 1:
+            result['time'] = (target_game.start // 1000 - int(datetime.datetime.now().timestamp())) + target_game.duration
+        else:
+            result['time'] = (target_game.start // 1000 - target_game.end_time) + target_game.duration
+
+        return Response(result)
 
 
 class DeleteGame(APIView):
