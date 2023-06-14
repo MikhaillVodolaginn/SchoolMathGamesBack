@@ -84,9 +84,20 @@ class GetGameById(APIView):
                     team_resp = {'teamId': team.team_id, 'name': team.team_name}
                     scores = list(GamePointsSerializer(team).data.values())
                     sum_score = 0
+                    horizontal = 0
+                    vertical = [0] * 6
                     for i in range(1, 31):
-                        if scores[i - 1] >= 0:
+                        if scores[i - 1] > 0:
                             sum_score += abaka_dict[str(i)][scores[i - 1]]
+                            horizontal += 1
+                            vertical[i % 6] += 1
+                        if i % 6 == 0:
+                            if horizontal == 6:
+                                sum_score += 50
+                            horizontal = 0
+                    for i in range(0, 6):
+                        if vertical[i] == 5:
+                            sum_score += (i + 1) * 10
                     team_resp['scores'] = scores
                     team_resp['sumScore'] = sum_score
                     teams.append(team_resp)
@@ -113,8 +124,9 @@ class GetGameById(APIView):
                     team_resp['sumScore'] = sum_score
                     teams.append(team_resp)
 
-            result = {'id': game.game_id, 'name': game.game_name, 'status': game.status, 'type': game.type,
-                      'start': game.start, 'time': game.duration, 'teams': teams}
+            result = {'id': game.game_id, 'name': game.game_name, 'status': game.status,
+                      'type': game.type, 'start': game.start, 'time': game.duration,
+                      'teams': sorted(teams, key=lambda x: x['sumScore'], reverse=True)}
 
             if game.status == 0:
                 return Response(result)
@@ -163,9 +175,20 @@ class UpdateGameInfo(APIView):
                 team_resp = {'teamId': team.team_id, 'name': team.team_name}
                 scores = list(GamePointsSerializer(team).data.values())
                 sum_score = 0
+                horizontal = 0
+                vertical = [0] * 6
                 for i in range(1, 31):
-                    if scores[i - 1] >= 0:
+                    if scores[i - 1] > 0:
                         sum_score += abaka_dict[str(i)][scores[i - 1]]
+                        horizontal += 1
+                        vertical[i % 6] += 1
+                    if i % 6 == 0:
+                        if horizontal == 6:
+                            sum_score += 50
+                        horizontal = 0
+                for i in range(0, 6):
+                    if vertical[i] == 5:
+                        sum_score += (i + 1) * 10
                 team_resp['scores'] = scores
                 team_resp['sumScore'] = sum_score
                 teams.append(team_resp)
@@ -194,7 +217,7 @@ class UpdateGameInfo(APIView):
 
         return Response({'id': target_game.game_id, 'name': target_game.game_name, 'status': target_game.status,
                          'type': target_game.type, 'start': target_game.start, 'time': target_game.duration,
-                         'teams': teams})
+                         'teams': sorted(teams, key=lambda x: x['sumScore'], reverse=True)})
 
 
 class AddTeam(APIView):
@@ -286,9 +309,20 @@ class UpdateTeam(APIView):
 
         if target_game.type == 0:
             scores = list(GamePointsSerializer(team).data.values())
+            horizontal = 0
+            vertical = [0] * 6
             for i in range(1, 31):
-                if scores[i - 1] >= 0:
+                if scores[i - 1] > 0:
                     sum_score += abaka_dict[str(i)][scores[i - 1]]
+                    horizontal += 1
+                    vertical[i % 6] += 1
+                if i % 6 == 0:
+                    if horizontal == 6:
+                        sum_score += 50
+                    horizontal = 0
+            for i in range(0, 6):
+                if vertical[i] == 5:
+                    sum_score += (i + 1) * 10
             team_resp['scores'] = scores
             team_resp['sumScore'] = sum_score
         elif target_game.type == 1:
@@ -348,9 +382,20 @@ class UpdateGameStatus(APIView):
                 team_resp = {'teamId': team.team_id, 'name': team.team_name}
                 scores = list(GamePointsSerializer(team).data.values())
                 sum_score = 0
+                horizontal = 0
+                vertical = [0] * 6
                 for i in range(1, 31):
-                    if scores[i - 1] >= 0:
+                    if scores[i - 1] > 0:
                         sum_score += abaka_dict[str(i)][scores[i - 1]]
+                        horizontal += 1
+                        vertical[i % 6] += 1
+                    if i % 6 == 0:
+                        if horizontal == 6:
+                            sum_score += 50
+                        horizontal = 0
+                for i in range(0, 6):
+                    if vertical[i] == 5:
+                        sum_score += (i + 1) * 10
                 team_resp['scores'] = scores
                 team_resp['sumScore'] = sum_score
                 teams.append(team_resp)
@@ -379,7 +424,7 @@ class UpdateGameStatus(APIView):
 
         result = {'id': target_game.game_id, 'name': target_game.game_name, 'status': target_game.status,
                   'type': target_game.type, 'start': target_game.start, 'time': target_game.duration,
-                  'teams': teams}
+                  'teams': sorted(teams, key=lambda x: x['sumScore'], reverse=True)}
 
         if target_game.status == 1:
             result['time'] = (target_game.start // 1000 - int(
@@ -448,9 +493,20 @@ class DeleteTeam(APIView):
 
         if target_game.type == 0:
             scores = list(GamePointsSerializer(target_team).data.values())
+            horizontal = 0
+            vertical = [0] * 6
             for i in range(1, 31):
-                if scores[i - 1] >= 0:
+                if scores[i - 1] > 0:
                     sum_score += abaka_dict[str(i)][scores[i - 1]]
+                    horizontal += 1
+                    vertical[i % 6] += 1
+                if i % 6 == 0:
+                    if horizontal == 6:
+                        sum_score += 50
+                    horizontal = 0
+            for i in range(0, 6):
+                if vertical[i] == 5:
+                    sum_score += (i + 1) * 10
             team_resp['scores'] = scores
             team_resp['sumScore'] = sum_score
         elif target_game.type == 1:
@@ -496,20 +552,19 @@ class ChangeScores(APIView):
         changeScores = request.data.get('changeScores', [])
 
         for score in changeScores:
-            print(score)
             team = team_set.get(team_id=int(score['teamId']))
             if target_game.type == 0:
                 exercise = int(score['exercise']) + 1
                 score['exercise'] = str(exercise)
-                team.update_field(exercise, abaka_dict[score['exercise'][int(score['value'])]])
+                team.update_field(exercise, int(score['value']))
             elif target_game.type == 1:
                 exercise = int(score['exercise']) + 1
                 score['exercise'] = str(exercise)
-                team.update_field(exercise, bonus_dict[score['exercise'][int(score['value'])]])
+                team.update_field(exercise, int(score['value']))
             else:
                 exercise = int(score['exercise'])
                 score['exercise'] = str(exercise)
-                team.update_field(exercise, domino_dict[score['exercise'][int(score['value'])]])
+                team.update_field(exercise, int(score['value']))
             team.save()
 
         return Response()
